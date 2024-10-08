@@ -1,4 +1,73 @@
-import requests
+from collections import deque
+
+# Definição das linhas de metrô como listas 
+metro_sp = {
+    # Linhas do Metrô
+    "Linha 1 - Azul": [
+        "Jabaquara", "Conceição", "São Judas", "Saúde", "Praça da Árvore", 
+        "Santa Cruz", "Vila Mariana", "Ana Rosa", "Paraíso", "Vergueiro", 
+        "São Joaquim", "Liberdade", "Sé", "São Bento", "Luz", "Tiradentes", 
+        "Armênia", "Portuguesa-Tietê", "Carandiru", "Santana", 
+        "Jardim São Paulo-Ayrton Senna", "Parada Inglesa", "Tucuruvi"
+    ],
+    "Linha 2 - Verde": [
+        "Vila Prudente", "Tamanduateí", "Sacomã", "Alto do Ipiranga", 
+        "Santos-Imigrantes", "Chácara Klabin", "Ana Rosa", "Paraíso", 
+        "Brigadeiro", "Trianon-Masp", "Consolação", "Clínicas", 
+        "Sumaré", "Vila Madalena"
+    ],
+    "Linha 3 - Vermelha": [
+        "Palmeiras-Barra Funda", "Marechal Deodoro", "Santa Cecília", 
+        "República", "Anhangabaú", "Sé", "Brás", "Bresser-Mooca", 
+        "Belém", "Tatuapé", "Carrão", "Penha", "Vila Matilde", 
+        "Guilhermina-Esperança", "Patriarca", "Artur Alvim", 
+        "Corinthians-Itaquera"
+    ],
+    "Linha 4 - Amarela": [
+        "Luz", "República", "Higienópolis-Mackenzie", "Paulista", 
+        "Fradique Coutinho", "Faria Lima", "Pinheiros", "Butantã", 
+        "São Paulo-Morumbi", "Vila Sônia"
+    ]
+}
+
+# Função para construir uma lista geral com todas as estações e conexões
+def construir_grafo(metro):
+    estacoes_das_linhas = {}
+    
+    for linha, estacoes in metro.items():
+        for i in range(len(estacoes)):
+            if estacoes[i] not in estacoes_das_linhas:
+                estacoes_das_linhas[estacoes[i]] = []
+            # Conectando a estação com as adjacentes
+            if i > 0:
+                estacoes_das_linhas[estacoes[i]].append(estacoes[i - 1])
+            if i < len(estacoes) - 1:
+                estacoes_das_linhas[estacoes[i]].append(estacoes[i + 1])
+    
+    return estacoes_das_linhas
+
+# Algoritmo de busca para encontrar o menor caminho
+def encontrar_caminho(metro, inicio, fim):
+    estacoes_das_linhas = construir_grafo(metro)
+    fila = deque([[inicio]])  # Fila com caminhos possíveis
+    visitados = set()  # Conjunto de estações já visitadas
+
+    while fila:
+        caminho = fila.popleft()  # Pegamos o primeiro caminho da fila
+        estacao_atual = caminho[-1]
+
+        if estacao_atual == fim:  # Se chegamos ao destino
+            return caminho
+
+        elif estacao_atual not in visitados:
+            visitados.add(estacao_atual)  # Marcamos a estação como visitada
+
+            for vizinho in estacoes_das_linhas[estacao_atual]:  # Adicionamos as conexões (vizinhos)
+                novo_caminho = list(caminho)
+                novo_caminho.append(vizinho)
+                fila.append(novo_caminho)
+    
+    return None  # Se não houver caminho
 
 # Função para cadastro de usuários
 def cadastrar_usuario(usuarios):
@@ -24,23 +93,6 @@ def login(usuarios):
         print("Usuário não encontrado. Verifique o e-mail.")
         return None
 
-# Função para buscar informações do CEP
-def buscar_cep():
-    cep = input("Digite o CEP (com ou sem hífen): ")
-    cep = cep.replace("-", "").strip()
-    url = f"https://viacep.com.br/ws/{cep}/json/"
-    
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        dados = response.json()
-        if "erro" not in dados:
-            print(f"Endereço: {dados['logradouro']}, {dados['bairro']}, {dados['localidade']}-{dados['uf']}")
-        else:
-            print("CEP não encontrado.")
-    else:
-        print("Erro ao consultar o CEP.")
-
 # Dicionário para armazenar os usuários
 usuarios = {}
 
@@ -54,10 +106,17 @@ while True:
         usuario_logado = login(usuarios)
         if usuario_logado:  # Se o login foi bem-sucedido
             while True:
-                acao_cep = input("Deseja buscar um CEP (b) ou sair (s)? ")
-                if acao_cep.lower() == 'b':
-                    buscar_cep()
-                elif acao_cep.lower() == 's':
+                acao_caminho = input("Deseja calcular um caminho no metrô (m) ou sair (s)? ")
+                if acao_caminho.lower() == 'm':
+                    inicio = input("Digite a estação de início: ")
+                    fim = input("Digite a estação de destino: ")
+                    caminho = encontrar_caminho(metro_sp, inicio, fim)
+                    if caminho:
+                        print(f"Caminho de {inicio} até {fim}: {' -> '.join(caminho)}")
+                        print(f"Você deverá passar por {len(caminho) - 1} estações.")
+                    else:
+                        print(f"Não há caminho entre {inicio} e {fim}.")
+                elif acao_caminho.lower() == 's':
                     print("Saindo do programa.")
                     break
                 else:
@@ -72,4 +131,3 @@ while True:
 print("\nUsuários cadastrados:")
 for email, info in usuarios.items():
     print(f"Email: {email}, Nome: {info['nome']}")
-
