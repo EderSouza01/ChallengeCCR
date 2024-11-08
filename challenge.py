@@ -2,7 +2,6 @@ from collections import deque
 
 # Definição das linhas de metrô como listas 
 metro_sp = {
-    # Linhas do Metrô
     "Linha 1 - Azul": [
         "Jabaquara", "Conceição", "São Judas", "Saúde", "Praça da Árvore", 
         "Santa Cruz", "Vila Mariana", "Ana Rosa", "Paraíso", "Vergueiro", 
@@ -69,17 +68,29 @@ def encontrar_caminho(metro, inicio, fim):
     
     return None  # Se não houver caminho
 
+# Função para validar as entradas de estações
+def validar_estacao(metro, estacao):
+    estacoes = [est for linha in metro.values() for est in linha]
+    return estacao in estacoes
+
 # Função para cadastro de usuários
 def cadastrar_usuario(usuarios):
-    nome = input("Digite o nome do usuário: ")
-    email = input("Digite o e-mail do usuário: ")
-    
-    # Verifica se o usuário já está cadastrado
-    if email in usuarios:
-        print("Usuário já cadastrado.")
-    else:
-        usuarios[email] = {'nome': nome}
-        print(f"Usuário {nome} cadastrado com sucesso!")
+    while True:
+        nome = input("Digite o nome do usuário: ")
+        email = input("Digite o e-mail do usuário: ")
+        
+        # Validação básica de e-mail
+        if '@' not in email or '.' not in email:
+            print("E-mail inválido. Tente novamente.")
+            continue
+        
+        # Verifica se o usuário já está cadastrado
+        if email in usuarios:
+            print("Usuário já cadastrado.")
+        else:
+            usuarios[email] = {'nome': nome}
+            print(f"Usuário {nome} cadastrado com sucesso!")
+            break
 
 # Função para login de usuários
 def login(usuarios):
@@ -93,41 +104,51 @@ def login(usuarios):
         print("Usuário não encontrado. Verifique o e-mail.")
         return None
 
-# Dicionário para armazenar os usuários
-usuarios = {}
+# Função principal do menu de opções
+def menu_principal():
+    usuarios = {}
+    usuario_logado = None
 
-# Loop principal para cadastro e login
-while True:
-    acao = input("Deseja cadastrar (c) ou fazer login (l)? (s para sair): ")
-    
-    if acao.lower() == 'c':
-        cadastrar_usuario(usuarios)
-    elif acao.lower() == 'l':
-        usuario_logado = login(usuarios)
-        if usuario_logado:  # Se o login foi bem-sucedido
-            while True:
-                acao_caminho = input("Deseja calcular um caminho no metrô (m) ou sair (s)? ")
-                if acao_caminho.lower() == 'm':
+    while True:
+        print("\n===== MENU PRINCIPAL =====")
+        print("1. Cadastrar usuário")
+        print("2. Login")
+        print("3. Calcular caminho no metrô")
+        print("4. Sair")
+        
+        opcao = input("Escolha uma opção: ")
+
+        if opcao == '1':
+            cadastrar_usuario(usuarios)
+        elif opcao == '2':
+            usuario_logado = login(usuarios)
+        elif opcao == '3':
+            if usuario_logado:
+                while True:
                     inicio = input("Digite a estação de início: ")
+                    if not validar_estacao(metro_sp, inicio):
+                        print("Estação de início inválida. Tente novamente.")
+                        continue
+                    
                     fim = input("Digite a estação de destino: ")
+                    if not validar_estacao(metro_sp, fim):
+                        print("Estação de destino inválida. Tente novamente.")
+                        continue
+
                     caminho = encontrar_caminho(metro_sp, inicio, fim)
                     if caminho:
                         print(f"Caminho de {inicio} até {fim}: {' -> '.join(caminho)}")
                         print(f"Você deverá passar por {len(caminho) - 1} estações.")
                     else:
                         print(f"Não há caminho entre {inicio} e {fim}.")
-                elif acao_caminho.lower() == 's':
-                    print("Saindo do programa.")
                     break
-                else:
-                    print("Opção inválida. Tente novamente.")
-    elif acao.lower() == 's':
-        print("Saindo do programa.")
-        break
-    else:
-        print("Opção inválida. Tente novamente.")
+            else:
+                print("Você precisa estar logado para calcular um caminho.")
+        elif opcao == '4':
+            print("Saindo do programa.")
+            break
+        else:
+            print("Opção inválida. Tente novamente.")
 
-# Exibir todos os usuários cadastrados
-print("\nUsuários cadastrados:")
-for email, info in usuarios.items():
-    print(f"Email: {email}, Nome: {info['nome']}")
+# Inicia o programa
+menu_principal()
